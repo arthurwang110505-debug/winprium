@@ -1,0 +1,40 @@
+{
+  "name": "AI 剪輯助理 · Winprium Studio",
+  "short_name": "AI 剪輯助理",
+  "description": "打一句話,Agnes AI 幫你規劃素材、排好時間軸,審片微調都在瀏覽器完成。",
+  "lang": "zh-TW",
+  "id": "/",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#07080d",
+  "theme_color": "#07080d",
+  "categories": ["productivity", "utilities", "multimedia"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
