@@ -1,0 +1,19 @@
+# 依賴
+node_modules/
+
+# 建置輸出
+dist/
+build/
+out/
+
+# 環境變數(永遠不要提交金鑰)
+.env
+.env.local
+.env.*.local
+
+# 系統/編輯器
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

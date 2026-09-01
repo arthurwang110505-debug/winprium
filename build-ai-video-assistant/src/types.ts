@@ -2,7 +2,8 @@
 // { assets, clips:[{id, assetId, start, length, in, filters, name, color}], filters, notes, summary }
 
 export type MotionKind = "drift" | "zoom" | "sweep" | "pulse";
-export type AssetKind = "generated" | "found" | "title";
+export type AssetKind = "generated" | "found" | "title" | "video";
+export type AspectRatio = "16:9" | "9:16" | "1:1";
 
 export interface Asset {
   id: string;
@@ -14,6 +15,7 @@ export interface Asset {
   seed: number;
   duration: number; // 素材可用長度(秒)
   titleText?: string;
+  videoUrl?: string; // 使用者上傳的影片素材(Blob URL)
 }
 
 export interface ClipFilters {
@@ -35,6 +37,43 @@ export interface Clip {
   color: string;
 }
 
+export interface SubtitleClip {
+  id: string;
+  start: number; // 時間軸起點(秒)
+  length: number; // 顯示秒數
+  text: string;
+  style?: SubtitleStyle;
+}
+
+export interface SubtitleStyle {
+  size?: number; // 字體大小(比例,預設 0.05)
+  color?: string;
+  background?: string;
+  position?: "bottom" | "center" | "top";
+}
+
+export type AudioSource = "preset" | "upload";
+
+export interface AudioClip {
+  id: string;
+  name: string;
+  start: number;
+  length: number;
+  in: number; // 從音訊內部第幾秒開始取
+  volume: number; // 0~1
+  loop: boolean;
+  source: AudioSource;
+  preset?: string; // source=preset 時用
+  url?: string; // source=upload 時用(Blob URL)
+  color?: string;
+}
+
+export interface AudioPresetInfo {
+  key: string;
+  name: string;
+  duration: number;
+}
+
 export interface Plan {
   assets: Asset[];
   clips: Clip[];
@@ -43,6 +82,8 @@ export interface Plan {
   summary: string;
   engine: "agnes" | "local";
   apiError?: string; // Agnes 失敗時的附註(降級本地時使用)
+  aspect?: AspectRatio; // 選填:AI 判斷的畫布比例(16:9 / 9:16 / 1:1)
+  targetDuration?: number; // 選填:使用者要求的目標長度(秒)
 }
 
 export interface ChatMsg {

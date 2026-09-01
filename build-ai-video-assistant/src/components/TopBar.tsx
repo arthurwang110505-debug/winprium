@@ -4,8 +4,10 @@ import {
   Check,
   Clapperboard,
   Download,
+  Redo2,
   RotateCcw,
   Settings,
+  Undo2,
   X,
 } from "lucide-react";
 import { usePwaInstall } from "../hooks/usePwaInstall";
@@ -13,11 +15,24 @@ import { usePwaInstall } from "../hooks/usePwaInstall";
 interface Props {
   hasKey: boolean;
   model: string;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
   onOpenSettings: () => void;
   onReset: () => void;
 }
 
-export default function TopBar({ hasKey, model, onOpenSettings, onReset }: Props) {
+export default function TopBar({
+  hasKey,
+  model,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onOpenSettings,
+  onReset,
+}: Props) {
   const { canInstall, installed, promptInstall } = usePwaInstall();
   const [showHelp, setShowHelp] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
@@ -56,6 +71,15 @@ export default function TopBar({ hasKey, model, onOpenSettings, onReset }: Props
       </span>
 
       <div className="spacer" />
+
+      <div className="history-tools">
+        <button className="icon-btn-lg" onClick={onUndo} disabled={!canUndo} title="復原 (Ctrl+Z)" aria-label="復原">
+          <Undo2 size={16} />
+        </button>
+        <button className="icon-btn-lg" onClick={onRedo} disabled={!canRedo} title="重做 (Ctrl+Y / Ctrl+Shift+Z)" aria-label="重做">
+          <Redo2 size={16} />
+        </button>
+      </div>
 
       {installed ? (
         <span className="installed-badge">

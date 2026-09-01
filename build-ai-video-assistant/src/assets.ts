@@ -1,7 +1,7 @@
 // 程序化素材產生器 — 每個素材都是「可在 canvas 上逐格畫出來」的動畫,不需要下載真實影片檔。
 // 之後要接真正的 AI 生成 / 素材庫,只要把這裡的 render 換成貼上真實影格即可。
 
-import type { Asset, AssetKind, ClipFilters, MotionKind } from "./types";
+import type { Asset, AssetKind, ClipFilters, MotionKind, SubtitleClip, SubtitleStyle } from "./types";
 
 export const PALETTES: Record<string, string[]> = {
   sunset: ["#ff7e5f", "#feb47b", "#ff5f6d", "#ffc371"],
@@ -130,6 +130,40 @@ export function drawAssetFrame(
   }
 }
 
+// 把真實影片(HTMLVideoElement)的第 timeSec 秒畫到 canvas,並套用與程序化素材一致的濾鏡/字幕。
+export function drawVideoAssetFrame(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  video: HTMLVideoElement,
+  timeSec: number,
+  filters: ClipFilters = {}
+): void {
+  const dur = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 1;
+  const seek = Math.min(Math.max(dur - 0.001, 0), Math.max(0, timeSec));
+  // 播放中容忍較大誤差,避免每幀都 seek 造成卡頓;只有 scrub/pause 時才精確跳轉
+  if (Math.abs(video.currentTime - seek) > 0.08) {
+    try {
+      video.currentTime = seek;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (vw > 0 && vh > 0 && video.readyState >= 2) {
+    // COVER:填滿畫布,不改變比例、裁切超出範圍
+    const scale = Math.max(w / vw, h / vh);
+    const dw = vw * scale;
+    const dh = vh * scale;
+    ctx.drawImage(video, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  }
+
+  applyFilters(ctx, w, h, filters);
+  if (filters.caption) drawCaption(ctx, w, h, filters.caption);
+}
+
 function applyFilters(ctx: CanvasRenderingContext2D, w: number, h: number, f: ClipFilters): void {
   if (f.grayscale) {
     const img = ctx.getImageData(0, 0, w, h);
@@ -191,5 +225,48 @@ function drawCaption(ctx: CanvasRenderingContext2D, w: number, h: number, text: 
   ctx.fillRect(w / 2 - metrics.width / 2 - pad, y - h * 0.06, metrics.width + pad * 2, h * 0.07);
   ctx.fillStyle = "#fff";
   ctx.fillText(text, w / 2, y);
+  ctx.restore();
+}
+
+// 獨立字幕軌:在畫面最上層繪製時間軸上「當前時間」的字幕
+export function drawSubtitle(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  sub: SubtitleClip,
+  style?: SubtitleStyle
+): void {
+  if (!sub.text.trim()) return;
+  const s: Required<SubtitleStyle> = {
+    size: style?.size ?? 0.05,
+    color: style?.color ?? "#ffffff",
+    background: style?.background ?? "rgba(0,0,0,0.62)",
+    position: style?.position ?? "bottom",
+  };
+  const fontSize = Math.max(16, Math.floor(h * Math.min(0.1, Math.max(0.03, s.size))));
+  ctx.save();
+  ctx.font = `700 ${fontSize}px "Noto Sans TC", system-ui, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const metrics = ctx.measureText(sub.text);
+  const padX = 16;
+  const boxW = metrics.width + padX * 2;
+  const boxH = fontSize * 1.55;
+  let cy: number;
+  if (s.position === "center") cy = h * 0.5;
+  else if (s.position === "top") cy = h * 0.16;
+  else cy = h * 0.9;
+  const bx = w / 2 - boxW / 2;
+  const by = cy - boxH / 2;
+  ctx.fillStyle = s.background;
+  ctx.beginPath();
+  const rr = (ctx as CanvasRenderingContext2D & { roundRect?: (...args: number[]) => void }).roundRect;
+  if (rr) rr.call(ctx, bx, by, boxW, boxH, 8);
+  else ctx.rect(bx, by, boxW, boxH);
+  ctx.fill();
+  ctx.fillStyle = s.color;
+  ctx.shadowColor = "rgba(0,0,0,0.7)";
+  ctx.shadowBlur = 6;
+  ctx.fillText(sub.text, w / 2, cy + 1);
   ctx.restore();
 }

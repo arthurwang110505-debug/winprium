@@ -16,4 +16,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"),
     },
   },
+  server: {
+    host: "0.0.0.0",
+    // 允許 Arena / 外部預覽主機連入（開發用；正式部署不需此設定）
+    allowedHosts: true,
+  },
 });

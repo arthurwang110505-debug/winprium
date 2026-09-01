@@ -1,19 +1,22 @@
 // 規劃協調器:優先使用 Agnes AI;未設定金鑰或連線失敗時,自動降級本地規則引擎。
-// 對外只暴露 planEdit(prompt) — UI 永遠拿到同一份契約格式 { assets, clips, filters, notes, summary }。
+// 對外只暴露 planEdit(prompt, ctx) — UI 永遠拿到同一份契約格式 { assets, clips, filters, notes, summary }。
 
 import { hasApiKey, planWithAgnes } from "./agnes";
-import { planEditLocal } from "./localPlanner";
+import { planEditLocal, type PlannerContext } from "./localPlanner";
 import type { Plan } from "./types";
 
-export async function planEdit(prompt: string): Promise<Plan> {
+export async function planEdit(
+  prompt: string,
+  ctx: PlannerContext = {}
+): Promise<Plan> {
   if (hasApiKey()) {
     try {
-      const plan = await planWithAgnes(prompt);
+      const plan = await planWithAgnes(prompt, ctx);
       return { ...plan, engine: "agnes" };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn("[planner] Agnes API 失敗,降級本地規則引擎:", msg);
-      const local = await planEditLocal(prompt);
+      const local = await planEditLocal(prompt, ctx);
       return {
         ...local,
         engine: "local",
@@ -27,7 +30,7 @@ export async function planEdit(prompt: string): Promise<Plan> {
     }
   }
 
-  const local = await planEditLocal(prompt);
+  const local = await planEditLocal(prompt, ctx);
   return {
     ...local,
     engine: "local",

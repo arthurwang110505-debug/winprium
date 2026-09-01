@@ -30,5 +30,18 @@ export default function AssetThumb({
     drawAssetFrame(ctx, width, height, asset, t, filters ?? {});
   }, [asset, width, height, t, filters]);
 
+  if (asset.kind === "video" && asset.videoUrl) {
+    return (
+      <video
+        src={asset.videoUrl}
+        muted
+        playsInline
+        preload="metadata"
+        className={className}
+        style={{ width: "100%", height: "auto", objectFit: "cover", background: "#000" }}
+      />
+    );
+  }
+
   return <canvas ref={ref} width={width} height={height} className={className} />;
 }
