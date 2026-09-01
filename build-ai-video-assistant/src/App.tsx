@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, Film, Pause, Play, SkipBack, Volume2, VolumeX } from "lucide-react";
 import { planEdit } from "./planner";
 import { getSettings, hasApiKey } from "./agnes";
+import { generateImage, generateVideo, getVideoStatus } from "./media";
 import { CLIP_COLORS, drawAssetFrame, drawSubtitle, drawVideoAssetFrame, uid } from "./assets";
 import { AUDIO_PRESETS, audioEngine, createAudioClipPreset, makeUploadAudioClip } from "./audio";
 import type {
@@ -87,6 +88,7 @@ export default function App() {
   const [aspect, setAspect] = useState<AspectRatio>("16:9");
   const [recording, setRecording] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [generatingMedia, setGeneratingMedia] = useState(false);
   const [pastLen, setPastLen] = useState(0);
   const [futureLen, setFutureLen] = useState(0);
 
@@ -358,6 +360,70 @@ export default function App() {
     setAudioClips((prev) => [...prev, clip]);
     setSelectedAudioId(clip.id);
     setNotice(`已加入背景音樂「${clip.name}」。`);
+  }
+
+  async function handleGenerateMedia(prompt: string, kind: "image" | "video") {
+    if (!hasApiKey()) {
+      setNotice("請先到右上角「設定」貼上 Agnes API 金鑰,才能生成圖片/影片。");
+      return;
+    }
+    setGeneratingMedia(true);
+    const name = prompt.slice(0, 22) + (prompt.length > 22 ? "…" : "");
+    try {
+      if (kind === "image") {
+        const { url } = await generateImage(prompt);
+        const a: Asset = {
+          id: uid("asset"),
+          name,
+          kind: "image",
+          palette: "ocean",
+          motion: "drift",
+          label: name,
+          seed: 0,
+          duration: 6,
+          imageUrl: url,
+        };
+        setAssets((prev) => [...prev, a]);
+        setNotice("AI 圖片已生成,已加入素材庫。可點「加入時間軸」使用。");
+      } else {
+        const { taskId } = await generateVideo(prompt);
+        setNotice("影片生成任務已建立,正在背景完成(約 1–2 分鐘,完成後自動加入素材庫)。");
+        const started = Date.now();
+        let finished = false;
+        while (Date.now() - started < 150000) {
+          await new Promise((r) => setTimeout(r, 5000));
+          const st = await getVideoStatus(taskId).catch(() => null);
+          if (!st) continue;
+          if (st.url) {
+            const a: Asset = {
+              id: uid("asset"),
+              name,
+              kind: "video",
+              palette: "ocean",
+              motion: "drift",
+              label: name,
+              seed: 0,
+              duration: 5,
+              videoUrl: st.url,
+            };
+            setAssets((prev) => [...prev, a]);
+            setNotice("AI 影片已生成,已加入素材庫。");
+            finished = true;
+            break;
+          }
+          if (st.error || /fail|error|cancel/.test(st.status)) {
+            setNotice(`影片生成失敗:${st.error || st.status}`);
+            finished = true;
+            break;
+          }
+        }
+        if (!finished) setNotice("影片仍在生成中;離開後可重新整理再確認素材庫。");
+      }
+    } catch (err) {
+      setNotice(`生成失敗:${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setGeneratingMedia(false);
+    }
   }
 
   function addAssetToTimeline(assetId: string) {
@@ -1228,6 +1294,8 @@ export default function App() {
             onPatchSubtitle={patchSubtitle}
             onDeleteSubtitle={deleteSubtitle}
             onSelectSubtitle={setSelectedSubtitleId}
+            generating={generatingMedia}
+            onGenerateMedia={handleGenerateMedia}
           />
         </section>
       </div>

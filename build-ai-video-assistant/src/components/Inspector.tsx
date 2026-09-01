@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   Aperture,
   Captions,
+  Image,
   Library,
   Loader2,
   Music,
   Pencil,
   Plus,
   SlidersHorizontal,
+  Sparkles,
   Sun,
   ThermometerSun,
   Timer,
   Trash2,
   Upload,
+  Video,
 } from "lucide-react";
 import AssetThumb from "./AssetThumb";
+import { t } from "../i18n";
 import type {
   Asset,
   AudioClip,
@@ -48,6 +52,8 @@ interface Props {
   onPatchSubtitle: (id: string, patch: Partial<SubtitleClip>) => void;
   onDeleteSubtitle: (id: string) => void;
   onSelectSubtitle: (id: string | null) => void;
+  generating: boolean;
+  onGenerateMedia: (prompt: string, kind: "image" | "video") => void;
 }
 
 function SliderField({
@@ -95,7 +101,54 @@ const KIND_LABEL: Record<Asset["kind"], string> = {
   found: "素材庫",
   title: "標題卡",
   video: "上傳影片",
+  image: "AI 圖片",
 };
+
+function GenerateBox({
+  generating,
+  onGenerateMedia,
+}: {
+  generating: boolean;
+  onGenerateMedia: (prompt: string, kind: "image" | "video") => void;
+}) {
+  const [prompt, setPrompt] = useState("");
+  const [kind, setKind] = useState<"image" | "video">("image");
+  return (
+    <div className="generate-zone">
+      <div className="generate-head">
+        <Sparkles size={14} />
+        <span>{t("generateZone")}</span>
+      </div>
+      <textarea
+        className="generate-input"
+        value={prompt}
+        placeholder="例如：夕陽下的海邊，電影感，高細節"
+        onChange={(e) => setPrompt(e.target.value)}
+        rows={2}
+      />
+      <div className="generate-row">
+        <div className="generate-kinds">
+          {(["image", "video"] as const).map((k) => (
+            <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)} title={k === "image" ? t("generateImage") : t("generateVideo")}>
+              {k === "image" ? <Image size={12} /> : <Video size={12} />}
+              {k === "image" ? t("generateImage") : t("generateVideo")}
+            </button>
+          ))}
+        </div>
+        <button
+          className="btn ghost small"
+          disabled={generating || !prompt.trim()}
+          onClick={() => {
+            onGenerateMedia(prompt.trim(), kind);
+          }}
+        >
+          {generating ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />}
+          {t("generate")}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function UploadBox({
   title,
@@ -143,7 +196,7 @@ function UploadBox({
   );
 }
 
-export default function Inspector({
+const Inspector = memo(function Inspector({
   clip,
   assets,
   audioClips,
@@ -168,6 +221,8 @@ export default function Inspector({
   onPatchSubtitle,
   onDeleteSubtitle,
   onSelectSubtitle,
+  generating,
+  onGenerateMedia,
 }: Props) {
   const [tab, setTab] = useState<"media" | "audio" | "subs">("media");
   const clipAsset = clip ? assets.find((a) => a.id === clip.assetId) : undefined;
@@ -186,14 +241,14 @@ export default function Inspector({
 
       <div className="inspector-tabs">
         <button className={tab === "media" ? "on" : ""} onClick={() => setTab("media")}>
-          素材
+          {t("media")}
         </button>
         <button className={tab === "audio" ? "on" : ""} onClick={() => setTab("audio")}>
-          音軌
+          {t("audio")}
           {audioClips.length > 0 && <i>{audioClips.length}</i>}
         </button>
         <button className={tab === "subs" ? "on" : ""} onClick={() => setTab("subs")}>
-          字幕
+          {t("subs")}
           {subtitles.length > 0 && <i>{subtitles.length}</i>}
         </button>
       </div>
@@ -206,6 +261,8 @@ export default function Inspector({
             assets={assets}
             uploading={uploading}
             uploadError={uploadError}
+            generating={generating}
+            onGenerateMedia={onGenerateMedia}
             onFiles={onFiles}
             onPickFiles={onPickFiles}
             onAddToTimeline={onAddToTimeline}
@@ -243,7 +300,9 @@ export default function Inspector({
       </div>
     </>
   );
-}
+});
+
+export default Inspector;
 
 function MediaTab({
   clip,
@@ -251,6 +310,8 @@ function MediaTab({
   assets,
   uploading,
   uploadError,
+  generating,
+  onGenerateMedia,
   onFiles,
   onPickFiles,
   onAddToTimeline,
@@ -263,6 +324,8 @@ function MediaTab({
   assets: Asset[];
   uploading: boolean;
   uploadError: string | null;
+  generating: boolean;
+  onGenerateMedia: (prompt: string, kind: "image" | "video") => void;
   onFiles: (files: FileList | File[]) => void;
   onPickFiles: () => void;
   onAddToTimeline: (assetId: string) => void;
@@ -272,6 +335,7 @@ function MediaTab({
 }) {
   return (
     <>
+      <GenerateBox generating={generating} onGenerateMedia={onGenerateMedia} />
       <UploadBox
         title="上傳影片素材"
         sub="選擇檔案或拖曳影片到這裡"

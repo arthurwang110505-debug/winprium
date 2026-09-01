@@ -2,7 +2,7 @@
 // { assets, clips:[{id, assetId, start, length, in, filters, name, color}], filters, notes, summary }
 
 export type MotionKind = "drift" | "zoom" | "sweep" | "pulse";
-export type AssetKind = "generated" | "found" | "title" | "video";
+export type AssetKind = "generated" | "found" | "title" | "video" | "image";
 export type AspectRatio = "16:9" | "9:16" | "1:1";
 
 export interface Asset {
@@ -16,6 +16,7 @@ export interface Asset {
   duration: number; // 素材可用長度(秒)
   titleText?: string;
   videoUrl?: string; // 使用者上傳的影片素材(Blob URL)
+  imageUrl?: string; // AI 生成的圖片素材(data URL 或遠端 URL)
 }
 
 export interface ClipFilters {

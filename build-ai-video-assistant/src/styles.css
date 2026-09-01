@@ -70,6 +70,42 @@ button:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+/* a11y:鍵盤聚焦要有清楚輪廓 */
+:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  margin-right: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.lang-switch button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-family: var(--font);
+}
+.lang-switch button.on {
+  background: rgba(122, 162, 255, 0.18);
+  color: var(--text);
+}
+
+button:disabled {
+  cursor: default;
+}
+
 .spacer {
   flex: 1;
 }
@@ -1370,6 +1406,67 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(122, 162, 255, 0.05);
   border: 1px solid rgba(122, 162, 255, 0.15);
   border-radius: 8px;
+}
+
+/* AI 生成素材 */
+.generate-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid rgba(122, 162, 255, 0.18);
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(122, 162, 255, 0.06), rgba(67, 232, 189, 0.04));
+}
+.generate-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cfe1ff;
+}
+.generate-input {
+  width: 100%;
+  min-height: 48px;
+  resize: vertical;
+  background: #0d1017;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 12px;
+}
+.generate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.generate-kinds {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.generate-kinds button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+.generate-kinds button.on {
+  background: rgba(122, 162, 255, 0.18);
+  color: var(--text);
 }
 
 /* 影片上傳區 */

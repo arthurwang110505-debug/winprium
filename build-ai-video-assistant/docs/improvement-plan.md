@@ -62,13 +62,13 @@
 
 | # | 項目 | 建議 | 難度 |
 | --- | --- | --- | --- |
-| 16 | 後端 API 代理 | 用 Node/Cloudflare Worker/Deno 做 OpenAI-compatible 代理,Key 只在伺服器;前端只改 `VITE_AGNES_API_PROXY` | 中 |
-| 17 | Agnes 圖片/影片生成 | 把 `AssetKind` 擴充成可載入 Agnes image/video 生成模型(透過 API),存入 IndexedDB 當素材 | 高 |
-| 18 | Tauri 打包 | 新增 `src-tauri`,把 `dist/` 包成 `.exe`/`.msi`;拖放、檔案選取走 Tauri API;WebView2 高效能 | 中 |
-| 19 | PWA 離線強化 | 服務 worker 對 `dist` 資源做版本化 cache;首次裝完離線可開;新增後台更新提示 | 低 |
-| 20 | 效能優化 | `offscreenCanvas` 預渲染縮圖;大影片改用 `video` 跨距渲染;Timeline 大量 clip 減少 re-render(useMemo / 虛擬化) | 中 |
-| 21 | Accessibility | 鍵盤標籤、`aria-label`、focus ring、縮放/對比度;拖曳避免只靠滑鼠(增加鍵盤 nudge) | 低 |
-| 22 | 國際化 | 目前繁中硬編碼;抽 `i18n`(至少 en-US),未來的 Windows 市場適用 | 中 |
+| 16 | 後端 API 代理 | 用 Node/Cloudflare Worker/Deno 做 OpenAI-compatible 代理,Key 只在伺服器;前端只改 `VITE_AGNES_API_PROXY` | ✅ 已做:Vercel `api/agnes.ts`(chat/image/video proxy) + `vercel.json` | 中 |
+| 17 | Agnes 圖片/影片生成 | 把 `AssetKind` 擴充成可載入 Agnes image/video 生成模型(透過 API),存入 IndexedDB 當素材 | ✅ 已做:`media.ts` + `Asset.kind=image` + Inspector「AI 生成素材」(影片任務＋輪詢);IndexedDB 為後續 | 高 |
+| 18 | Tauri 打包 | 新增 `src-tauri`,把 `dist/` 包成 `.exe`/`.msi`;拖放、檔案選取走 Tauri API;WebView2 高效能 | ✅ 已建骨架+打包教學(需本機 Rust 才能產 .exe) | 中 |
+| 19 | PWA 離線強化 | 服務 worker 對 `dist` 資源做版本化 cache;首次裝完離線可開;新增後台更新提示 | ✅ 已做:sw.js v2,shell+icons 快取,API 永不快取 | 低 |
+| 20 | 效能優化 | `offscreenCanvas` 預渲染縮圖;大影片改用 `video` 跨距渲染;Timeline 大量 clip 減少 re-render(useMemo / 虛擬化) | ✅ 部分:AssetThumb/Timeline/Inspector 加 React.memo;offscreen/虛擬化為後續 | 中 |
+| 21 | Accessibility | 鍵盤標籤、`aria-label`、focus ring、縮放/對比度;拖曳避免只靠滑鼠(增加鍵盤 nudge) | ✅ 已做:focus-visible、aria-label、鍵盤 nudge/undo;完整對比度稽核為後續 | 低 |
+| 22 | 國際化 | 目前繁中硬編碼;抽 `i18n`(至少 en-US),未來的 Windows 市場適用 | ✅ 已做:`i18n.ts` + 語言切換,覆蓋主介面;完整翻譯為後續 | 中 |
 
 ---
 

@@ -1,5 +1,7 @@
+import { memo } from "react";
 import { Magnet, Mic2, Pencil, Volume2, ZoomIn, ZoomOut } from "lucide-react";
 import AssetThumb from "./AssetThumb";
+import { t } from "../i18n";
 import type { Asset, AudioClip, Clip, SubtitleClip } from "../types";
 
 export type DragMode = "move" | "resize-left" | "resize-right";
@@ -24,7 +26,7 @@ interface Props {
   onTighten: () => void;
 }
 
-export default function Timeline({
+const Timeline = memo(function Timeline({
   clips,
   audioClips,
   subtitles,
@@ -69,7 +71,7 @@ export default function Timeline({
     <div className="timeline">
       <div className="tl-head">
         <span className="tl-title">
-          時間軸
+          {t("timeline")}
           <em>
             影片 {clips.length} 段 · 音軌 {audioClips.length} · 字幕 {subtitles.length} · 總長{" "}
             {totalDuration.toFixed(1)}s
@@ -84,14 +86,14 @@ export default function Timeline({
             title="把所有影片片段往前收合,移除空隙"
           >
             <Magnet size={13} />
-            縫合空隙
+            {t("tighten")}
           </button>
           <div className="tl-zoom">
-            <button className="icon-btn" onClick={() => onZoom(-1)} title="縮小" aria-label="縮小時間軸">
+            <button className="icon-btn" onClick={() => onZoom(-1)} title={t("zoomOut")} aria-label={t("zoomOut")}>
               <ZoomOut size={14} />
             </button>
             <span className="tl-zoom-val">{pxPerSec}px/s</span>
-            <button className="icon-btn" onClick={() => onZoom(1)} title="放大" aria-label="放大時間軸">
+            <button className="icon-btn" onClick={() => onZoom(1)} title={t("zoomIn")} aria-label={t("zoomIn")}>
               <ZoomIn size={14} />
             </button>
           </div>
@@ -226,7 +228,9 @@ export default function Timeline({
       </div>
     </div>
   );
-}
+});
+
+export default Timeline;
 
 function FilmMini() {
   return (

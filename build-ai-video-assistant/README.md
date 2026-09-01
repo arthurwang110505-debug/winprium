@@ -21,6 +21,9 @@ Windows 用 Chrome / Edge 打開就能用，還能一鍵**安裝成桌面 App（
 - **微調面板**：長度、亮度、色溫（冷↔暖）、電影暗角、黑白、字幕，全部逐格即時預覽。
 - **素材庫**：AI 生成動態縮圖、來源標籤，以及你上傳的真實影片素材。
 - **輸出比例**：可切換 16:9 / 9:16 / 1:1，預覽畫布與匯出都對應。
+- **Agnes 圖／影片生成**：右側「AI 生成素材」可輸入 prompt 生成圖片（agnes-image）或影片（agnes-video，非同步任務＋輪詢），自動加入素材庫。
+- **PWA 離線**：service worker 版本化 cache，安裝後可離線啟動；API 永不快取。
+- **i18n**：繁中／英文介面切換（右上角），目前先覆蓋主介面與設置。
 - **匯出影片**：目前用 MediaRecorder 把 Canvas 錄成 MP4 / WebM（依瀏覽器支援），真 MP4 轉檔之後接 ffmpeg.wasm。
 - **專案自動儲存**：assets / clips / 比例會自動存到 localStorage，刷新後恢復（上傳影片需重新匯入）。
 - **可安裝成 App（PWA）**：頂列「安裝 App」按鈕；manifest + service worker，安裝後可離線啟動、出現在開始功能表與桌面。
@@ -59,6 +62,28 @@ VITE_AGNES_MODEL=agnes-2.5-flash
 ```
 
 優先序：介面設定 > 環境變數。模型建議用免費的 `agnes-2.5-flash`；`agnes-2.5-pro` 為付費旗艦。
+
+## Vercel 部署（後端代理 ＋ 公開網站）
+
+**目的**：把 Agnes 金鑰移到伺服器，避免公開網站暴露 Key。
+
+1. 在 Vercel import 這個 repo，Root Directory 選 `build-ai-video-assistant`。
+2. Vercel 環境變數設定：`AGNES_API_KEY=sk-...`（後端用到），可選 `AGNES_BASE_URL=https://apihub.agnes-ai.com`。
+3. 前端 build 變數：`VITE_AGNES_API_PROXY=/api/agnes`（注意：`VITE_` 變數在 build 時要設）。
+4. 部署後，chat / image / video 都會打到 `/api/agnes`，金鑰只存在伺服器端。
+
+> `api/agnes.ts` 是 Vercel Serverless；`vercel.json` 已設 `outputDirectory=dist`。本機開發也可直接設相同 env 測試代理。
+
+## 環境變數一覽
+
+| 變數 | 用途 | 範例 |
+| --- | --- | --- |
+| `VITE_AGNES_API_KEY` | 前端直連模式的金鑰（本地開發／測試） | `sk-...` |
+| `VITE_AGNES_BASE_URL` | Agnes Base URL | `https://apihub.agnes-ai.com` |
+| `VITE_AGNES_MODEL` | 聊天模型 | `agnes-2.5-flash` |
+| `VITE_AGNES_API_PROXY` | 指向後端代理（公開部署用） | `/api/agnes` |
+| `AGNES_API_KEY` | **Vercel 後端**用的金鑰（不要用 VITE_ 前綴） | `sk-...` |
+| `AGNES_BASE_URL` | 後端要轉送的 Base URL（選填） | `https://apihub.agnes-ai.com` |
 
 ### 後端代理（保護 API Key）
 
@@ -126,8 +151,31 @@ public/
 第一階段先驗證 Web App（現在已完成），之後用同一份前端包 Windows App：
 
 - **PWA（現在就有）**：`npm run build && npm run preview`（或部署到 https），Chrome/Edge 安裝即可變成獨立 App。體積最小、不用寫原生碼。
-- **Tauri（建議）**：前端不變，把 `dist/` 用 Tauri 包成 `.exe`/`.msi`。體積小（比 Electron 小很多）、記憶體佔用低、Microsoft Edge WebView2 共用，Windows 體驗好。
+- **Tauri（建議，已附骨架）**：`src-tauri/` 已放好 `Cargo.toml`、`tauri.conf.json`、`build.rs`、`src/main.rs`、`src/lib.rs`、icons。前端不變，把 `dist/` 用 Tauri 包成 `.exe`/`.msi`。體積小、記憶體佔用低、Windows 體驗好。
 - **Electron（次要備案）**：開發生態最完整，但包體與記憶體較大。若未來有 Node 端連原生能力需求再考慮。
+
+### Tauri 打包步驟（Windows）
+
+> 需要在本機安裝 Rust（https://rustup.rs）與 Tauri CLI。沙箱／CI 沒有 Rust 時無法產出 `.exe`，只保留設定。
+
+```bash
+# 1. 安裝 Tauri CLI(任選)
+npm install -g @tauri-apps/cli
+
+# 2. 確認前端可 build
+cd build-ai-video-assistant
+npm install && npm run build
+
+# 3. 本機開發(會啟動 vite dev)
+npx tauri dev
+
+# 4. 打包 Windows 安裝檔(產出 .exe/.msi 到 src-tauri/target/release/bundle)
+npx tauri build
+```
+
+- `src-tauri/tauri.conf.json` 已指向 `frontendDist: "../dist"`、`devUrl: http://localhost:5173`。
+- 若要圖示用 Windows `.ico`：把 `src-tauri/icons/icon.png` 轉成 `icon.ico`（可用 `npx tauri icon public/icons/icon-512.png`）。
+- 首次 build 會編譯 Rust，時間較長；完成後在 `src-tauri/target/release/bundle/` 拿到安裝檔。
 
 > 前端已不綁定 node 或特定 runtime，只產出標準 HTML/JS/CSS + 靜態資源，因此切到 Tauri/Electron 時不需要重寫。
 

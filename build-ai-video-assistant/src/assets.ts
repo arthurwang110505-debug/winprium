@@ -33,6 +33,38 @@ export function uid(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${counter}`;
 }
 
+// 圖片素材快取(AI 生成的圖可能用到多個 frame)
+const imageCache = new Map<string, HTMLImageElement>();
+
+export function getCachedImage(url: string): HTMLImageElement | null {
+  return imageCache.get(url) ?? null;
+}
+
+export function loadImage(url: string): Promise<HTMLImageElement> {
+  const cached = imageCache.get(url);
+  if (cached && cached.complete && cached.naturalWidth > 0) return Promise.resolve(cached);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      imageCache.set(url, img);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error("無法載入圖片"));
+    img.src = url;
+  });
+}
+
+function drawCover(ctx: CanvasRenderingContext2D, w: number, h: number, img: HTMLImageElement): void {
+  const vw = img.naturalWidth || img.width;
+  const vh = img.naturalHeight || img.height;
+  if (!vw || !vh) return;
+  const scale = Math.max(w / vw, h / vh);
+  const dw = vw * scale;
+  const dh = vh * scale;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
 export function makeAsset(opts: {
   id: string;
   name: string;
@@ -68,6 +100,18 @@ export function drawAssetFrame(
   const seed = asset.seed;
   const t = localT;
 
+  // AI 生成的圖片素材:載入完成後直接貼圖,否則先用程序化背景墊底
+  if ((asset.kind === "image" || asset.imageUrl) && asset.imageUrl) {
+    const img = getCachedImage(asset.imageUrl);
+    if (img) {
+      drawCover(ctx, w, h, img);
+    } else {
+      loadImage(asset.imageUrl).then((loaded) => {
+        drawCover(ctx, w, h, loaded);
+      }).catch(() => undefined);
+    }
+  }
+
   // 背景漸層(隨時間微幅移動)
   const g = ctx.createLinearGradient(0, 0, w, h);
   const shift = (Math.sin(t * Math.PI * 2) + 1) / 2;
@@ -77,9 +121,19 @@ export function drawAssetFrame(
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
-  // 動態元素
+  // 動態元素(圖片素材蓋掉程序化背景後,仍可保留輕微掃光)
   ctx.save();
-  if (asset.motion === "drift") {
+  if (asset.imageUrl) {
+    if (asset.motion === "sweep") {
+      const x = t * (w + 300) - 150;
+      const grad = ctx.createLinearGradient(x - 150, 0, x + 150, 0);
+      grad.addColorStop(0, "rgba(255,255,255,0)");
+      grad.addColorStop(0.5, "rgba(255,255,255,0.18)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    }
+  } else if (asset.motion === "drift") {
     for (let i = 0; i < 6; i++) {
       const px = ((i * 137 + seed * 13) % w) + Math.sin(t * 6.28 + i) * 40;
       const py = ((i * 91 + seed * 7) % h) + Math.cos(t * 6.28 + i) * 30;

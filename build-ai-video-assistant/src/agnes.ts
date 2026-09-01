@@ -76,6 +76,11 @@ export function getEndpoint(base: string): string {
   return proxy || `${base.replace(/\/+$/, "")}/v1/chat/completions`;
 }
 
+// 是否有走後端代理(公開部署時金鑰在伺服器)
+export function isUsingProxy(): boolean {
+  return envVal("VITE_AGNES_API_PROXY").length > 0;
+}
+
 // ---- 測試連線(給設定視窗用) ----
 export async function testConnection(over?: Partial<AgnesSettings>): Promise<string> {
   const s = getSettings();
