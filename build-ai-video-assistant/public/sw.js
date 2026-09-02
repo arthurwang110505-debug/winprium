@@ -1,8 +1,8 @@
 // AI 剪輯助理 — Service Worker
-// 策略:App Shell 快取優先、頁面導航網路優先(失敗回快取)、API 請求永不快取。
+// 策略:App Shell + 靜態資源快取優先、頁面導航網路優先(失敗回快取)、API 請求永不快取。
 
-const CACHE = "winprium-studio-v1";
-const SHELL = ["./"];
+const CACHE = "winprium-studio-v2";
+const SHELL = ["./", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -24,8 +24,9 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // API(Agnes)與非 GET:直接穿透,絕不快取
-  if (event.request.method !== "GET" || url.hostname.includes("agnes-ai.com")) {
+  // API(Agnes / 後端代理 /api/agnes)與非 GET:直接穿透,絕不快取
+  const isApi = url.hostname.includes("agnes-ai.com") || url.pathname.startsWith("/api/");
+  if (event.request.method !== "GET" || isApi) {
     return;
   }
 
@@ -38,9 +39,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE).then((cache) => cache.put(event.request, copy));
           return res;
         })
-        .catch(() =>
-          caches.match(event.request).then((hit) => hit || caches.match("./"))
-        )
+        .catch(() => caches.match(event.request).then((hit) => hit || caches.match("./")))
     );
     return;
   }
@@ -58,5 +57,14 @@ self.addEventListener("fetch", (event) => {
           })
       )
     );
+  }
+});
+
+// 讓 PWA 收到更新提示(App 層可以監聽)
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CHECK_UPDATE") {
+    self.registration.update().then(() => {
+      event.source?.postMessage({ type: "UPDATE_CHECKED" });
+    });
   }
 });

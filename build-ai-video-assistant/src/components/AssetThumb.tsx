@@ -1,6 +1,6 @@
 // 素材縮圖:用同一套 drawAssetFrame 畫出素材的某一格,當作即時預覽縮圖。
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { drawAssetFrame } from "../assets";
 import type { Asset, ClipFilters } from "../types";
 
@@ -13,7 +13,7 @@ interface Props {
   className?: string;
 }
 
-export default function AssetThumb({
+const AssetThumb = memo(function AssetThumb({
   asset,
   width = 160,
   height = 90,
@@ -30,5 +30,31 @@ export default function AssetThumb({
     drawAssetFrame(ctx, width, height, asset, t, filters ?? {});
   }, [asset, width, height, t, filters]);
 
+  if (asset.kind === "video" && asset.videoUrl) {
+    return (
+      <video
+        src={asset.videoUrl}
+        muted
+        playsInline
+        preload="metadata"
+        className={className}
+        style={{ width: "100%", height: "auto", objectFit: "cover", background: "#000" }}
+      />
+    );
+  }
+
+  if ((asset.kind === "image" || asset.imageUrl) && asset.imageUrl) {
+    return (
+      <img
+        src={asset.imageUrl}
+        alt={asset.name}
+        className={className}
+        style={{ width: "100%", height: "auto", objectFit: "cover", background: "#000" }}
+      />
+    );
+  }
+
   return <canvas ref={ref} width={width} height={height} className={className} />;
-}
+});
+
+export default AssetThumb;
