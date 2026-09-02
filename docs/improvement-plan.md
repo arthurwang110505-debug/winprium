@@ -1,6 +1,6 @@
 # Winprium AI 剪輯助理 — 改進建議 / 開發計畫
 
-> 範圍：`build-ai-video-assistant`（React 18 + Vite + Agnes AI）
+> 範圍：專案根目錄（React 18 + Vite + Agnes AI）
 > 原則:不要過度複雜化,先讓「聊天 → AI 剪輯 → Timeline → Preview → 微調 → 匯出」這條主線真正跑穩,再往多軌、後端、Windows App 推進。
 
 ---
