@@ -17,3 +17,7 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# Rust / Tauri 建置產物(很大,不要進 git)
+src-tauri/target/
+src-tauri/gen/schemas/
