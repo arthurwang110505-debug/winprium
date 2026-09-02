@@ -156,25 +156,30 @@ public/
 
 ### Tauri 打包步驟（Windows）
 
-> 需要在本機安裝 Rust（https://rustup.rs）與 Tauri CLI。沙箱／CI 沒有 Rust 時無法產出 `.exe`，只保留設定。
+先裝兩樣東西（各裝一次就好）：
+
+1. **Visual Studio Build Tools** — 安裝時勾「**使用 C++ 的桌面開發**」
+2. **Rust** — https://rustup.rs （跳「Windows 已保護您的電腦」是正常的，見下方說明）
+
+然後在專案資料夾開 PowerShell，照順序貼：
 
 ```bash
-# 1. 安裝 Tauri CLI(任選)
-npm install -g @tauri-apps/cli
-
-# 2. 確認前端可 build
-npm install && npm run build
-
-# 3. 本機開發(會啟動 vite dev)
-npx tauri dev
-
-# 4. 打包 Windows 安裝檔(產出 .exe/.msi 到 src-tauri/target/release/bundle)
-npx tauri build
+npm install         # 1. 裝東西（Tauri 工具已包含在裡面）
+npm run build       # 2. 把網站打包好
+npm run tauri:dev   # 3. 先開看看，會跳出一個桌面視窗
+npm run tauri:build # 4. 正式打包成 .exe（第一次要等 3~10 分鐘）
 ```
 
-- `src-tauri/tauri.conf.json` 已指向 `frontendDist: "../dist"`、`devUrl: http://localhost:5173`。
-- 若要圖示用 Windows `.ico`：把 `src-tauri/icons/icon.png` 轉成 `icon.ico`（可用 `npx tauri icon public/icons/icon-512.png`）。
-- 首次 build 會編譯 Rust，時間較長；完成後在 `src-tauri/target/release/bundle/` 拿到安裝檔。
+打包完，`.exe` 在這裡：
+
+```
+src-tauri\target\release\bundle\nsis\
+```
+
+- 第 4 步卡住或報錯 → 改跑 `npm run tauri:build:exe`（少做一件事，比較不容易失敗）。
+- 換圖示 → 改 `public/icons/icon-512.png`，再跑 `npx tauri icon public/icons/icon-512.png`。
+- 為什麼要裝那兩樣：Rust 負責把程式編成 `.exe`，C++ 工具是它編譯時要用的零件，缺一個就會失敗。
+- 你的 `.exe` 也沒花錢買簽章，所以別人下載時同樣會看到「Windows 已保護您的電腦」，點「其他資訊 → 仍要執行」就好。
 
 > 前端已不綁定 node 或特定 runtime，只產出標準 HTML/JS/CSS + 靜態資源，因此切到 Tauri/Electron 時不需要重寫。
 
